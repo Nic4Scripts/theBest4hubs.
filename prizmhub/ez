@@ -433,7 +433,7 @@ function Prizm:Tab(name)
     return Tab
 end
 
-Prizm.createWindow = createWindow
+Local.createWindow = createWindow
 
 -- Welcome
 spawn(function()
