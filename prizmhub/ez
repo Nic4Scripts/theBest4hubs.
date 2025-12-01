@@ -1,0 +1,417 @@
+-- Prizm Hub by King Prizm
+-- Loadstring version - full UI library
+
+local Prizm = {Tabs = {}}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Main ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PrizmHub"
+ScreenGui.Parent = game.CoreGui
+
+-- Blur Background
+local Blur = Instance.new("Frame")
+Blur.Size = UDim2.new(1,0,1,0)
+Blur.BackgroundTransparency = 0.3
+Blur.BackgroundColor3 = Color3.new(0,0,0)
+Blur.Visible = false
+Blur.ZIndex = -1
+Blur.Parent = ScreenGui
+
+local BlurEffect = Instance.new("BlurEffect")
+BlurEffect.Size = 20
+BlurEffect.Parent = game.Lighting
+
+-- Wavy Background
+local Wave = Instance.new("ImageLabel")
+Wave.Size = UDim2.new(1,0,1,0)
+Wave.Position = UDim2.new(0,0,0,0)
+Wave.Image = "rbxassetid://6026568210" -- blue wave pattern
+Wave.ImageColor3 = Color3.fromRGB(20, 30, 80)
+Wave.BackgroundTransparency = 1
+Wave.ZIndex = 0
+Wave.Parent = nil
+
+-- Raining Particles
+local Particles = Instance.new("Frame")
+Particles.Size = UDim2.new(1,0,1,0)
+Particles.BackgroundTransparency = 1
+Particles.ZIndex = 1
+Particles.Parent = nil
+
+for i = 1, 80 do
+    local p = Instance.new("Frame")
+    p.Size = UDim2.new(0, math.random(4,10), 0, math.random(20,60))
+    p.BackgroundColor3 = Color3.new(1,1,1)
+    p.BackgroundTransparency = math.random(30,70)/100
+    p.BorderSizePixel = 0
+    p.Position = UDim2.new(math.random(), 0, math.random(-1,0), 0)
+    p.Rotation = math.random(-30,30)
+    p.ZIndex = 2
+    p.Parent = Particles
+
+    local tween = TweenService:Create(p, TweenInfo.new(math.random(8,20), Enum.EasingStyle.Linear), {Position = UDim2.new(p.Position.X.Scale, 0, 1.2, 0)})
+    tween:Play()
+    tween.Completed:Connect(function() do tween:Play() end)
+end
+
+-- Main UI
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 620, 0, 480)
+Main.Position = UDim2.new(0.5, -310, 0.5, -240)
+Main.BackgroundTransparency = 1
+Main.ClipsDescendants = true
+Main.Visible = false
+Main.Parent = ScreenGui
+
+local Outline = Instance.new("UIStroke")
+Outline.Thickness = 2
+Outline.Color = Color3.fromRGB(0, 120, 255)
+Outline.Transparency = 0
+Outline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+Outline.Parent = Main
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 12) -- ~0.6 feel
+Corner.Parent = Main
+
+local Background = Instance.new("Frame")
+Background.Size = UDim2.new(1,0,1,0)
+Background.BackgroundColor3 = Color3.new(0,0,0)
+Background.BorderSizePixel = 0
+Background.ZIndex = 0
+Background.Parent = Main
+Instance.new("UICorner", Background).CornerRadius = UDim.new(0,12)
+
+Wave.Parent = Background
+Particles.Parent = Main
+
+-- Top Drag Bar
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1,0,0,35)
+TopBar.BackgroundTransparency = 1
+TopBar.ZIndex = 10
+TopBar.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Text = "Prizm Hub"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextColor3 = Color3.fromRGB(0, 170, 255)
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0,15,0,0)
+Title.Size = UDim2.new(0,200,1,0)
+Title.ZIndex = 11
+Title.Parent = TopBar
+
+-- Dragging
+local dragging, dragInput, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputType.End then
+                dragging = false
+            end)
+        end)
+    end)
+end)
+
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end)
+end)
+
+-- Tab System
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(0,150,1,-35)
+TabContainer.Position = UDim2.new(0,0,0,35)
+TabContainer.BackgroundTransparency = 0.95
+TabContainer.BackgroundColor3 = Color3.new(0,0,0)
+TabContainer.Parent = Main
+
+local TabLayout = Instance.new("UIListLayout")
+TabLayout.Padding = UDim.new(0,8)
+TabLayout.Parent = TabContainer
+TabLayout.FillDirection = Enum.FillDirection.Vertical
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1,-150,1,-35)
+Content.Position = UDim2.new(0,150,0,35)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
+
+-- Toggle Open/Close with Right Shift
+UserInputService.InputBegan:Connect(function(key)
+    if key.KeyCode == Enum.KeyCode.RightShift then
+        Main.Visible = not Main.Visible
+        Blur.Visible = Main.Visible
+        Wave.Visible = Main.Visible
+        Particles.Visible = Main.Visible
+    end)
+end)
+
+-- Library Functions
+function Prizm:Tab(name)
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Size = UDim2.new(1,-20,0,40)
+    TabBtn.BackgroundColor3 = Color3.fromRGB(20,20,30)
+    TabBtn.Text = "  "..name
+    TabBtn.TextColor3 = Color3.new(1,1,1)
+    TabBtn.Font = Enum.Font.Gotham
+    TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+    TabBtn.AutoButtonColor = false
+    TabBtn.Parent = TabContainer
+
+    local TabCorner = Instance.new("UICorner", TabBtn)
+    TabCorner.CornerRadius = UDim.new(0,8)
+
+    local TabContent = Instance.new("ScrollingFrame")
+    TabContent.Size = UDim2.new(1, -20, 1, -20)
+    TabContent.Position = UDim2.new(0, 10, 0, 10)
+    TabContent.BackgroundTransparency = 1
+    TabContent.ScrollBarThickness = 4
+    TabContent.Visible = false
+    TabContent.CanvasSize = UDim2.new(0,0,0,0)
+    TabContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    TabContent.Parent = Content
+
+    local Layout = Instance.new("UIListLayout", TabContent)
+    Layout.Padding = UDim.new(0,10)
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local Padding = Instance.new("UIPadding", TabContent)
+    Padding.PaddingLeft = UDim.new(0,10)
+    Padding.PaddingRight = UDim.new(0,10)
+    Padding.PaddingTop = UDim.new(0,10)
+
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, v in pairs(Content:GetChildren()) do
+            if v:IsA("ScrollingFrame") then v.Visible = false end
+        end
+        TabContent.Visible = true
+
+        for _, btn in pairs(TabContainer:GetChildren()) do
+            if btn:IsA("TextButton then
+                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20,20,30)}):Play()
+            end
+        end
+        TweenService:Create(TabBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,100,200)}):Play()
+    end)
+
+    if #TabContainer:GetChildren() == 3 then -- first tab
+        TabContent.Visible = true
+        TabBtn.BackgroundColor3 = Color3.fromRGB(0,100,200)
+    end
+
+    local Tab = {}
+
+    function Tab:Section(title)
+        local Section = Instance.new("Frame")
+        Section.Size = UDim2.new(1,0,0,30)
+        Section.BackgroundTransparency = 0.9
+        Section.BackgroundColor3 = Color3.fromRGB(10,10,20)
+        Section.Parent = TabContent
+
+        local SectionTitle = Instance.new("TextLabel")
+        SectionTitle.Text = title
+        SectionTitle.Size = UDim2.new(1,0,1,0)
+        SectionTitle.BackgroundTransparency = 1
+        SectionTitle.Font = Enum.Font.GothamBold
+        SectionTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+        SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+        SectionTitle.Position = UDim2.new(0,10,0,0)
+        SectionTitle.Parent = Section
+
+        local SectionCorner = Instance.new("UICorner", Section)
+        SectionCorner.CornerRadius = UDim.new(0,8)
+
+        local SectionContent = Instance.new("Frame")
+        SectionContent.Size = UDim2.new(1,0,0,0)
+        SectionContent.Position = UDim2.new(0,0,1,0)
+        SectionContent.BackgroundTransparency = 1
+        SectionContent.AutomaticSize = Enum.AutomaticSize.Y
+        SectionContent.Parent = Section
+
+        local SectionLayout = Instance.new("UIListLayout", SectionContent)
+        SectionLayout.Padding = UDim.new(0,8)
+
+        local SectionObj = {}
+
+        function SectionObj:Button(text, callback)
+            local Btn = Instance.new("TextButton")
+            Btn.Size = UDim2.new(1, -20, 0, 38)
+            Btn.BackgroundColor3 = Color3.fromRGB(30,30,50)
+            Btn.Text = text
+            Btn.Font = Enum.Font.Gotham
+            Btn.TextColor3 = Color3.new(1,1,1)
+            Btn.AutoButtonColor = false
+            Btn.Parent = SectionContent
+
+            local BtnCorner = Instance.new("UICorner", Btn)
+            BtnCorner.CornerRadius = UDim.new(0,10)
+
+            Btn.MouseButton1Click:Connect(callback)
+
+            Btn.MouseEnter:Connect(function()
+                TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,120,255)}):Play()
+            end)
+            Btn.MouseLeave:Connect(function()
+                TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30,30,50)}):Play()
+            end)
+        end
+
+        function SectionObj:Toggle(text, default, callback)
+            local Toggle = Instance.new("Frame")
+            Toggle.Size = UDim2.new(1, -20, 0, 40)
+            Toggle.BackgroundColor3 = Color3.fromRGB(20,20,35)
+            Toggle.Parent = SectionContent
+
+            local ToggleCorner = Instance.new("UICorner", Toggle)
+            ToggleCorner.CornerRadius = UDim.new(0,10)
+
+            local ToggleText = Instance.new("TextLabel")
+            ToggleText.Text = text
+            ToggleText.Size = UDim2.new(1, -60,1,0)
+            ToggleText.BackgroundTransparency = 1
+            ToggleText.Font = Enum.Font.Gotham
+            ToggleText.TextColor3 = Color3.new(1,1,1)
+            ToggleText.TextXAlignment = Enum.TextXAlignment.Left
+            ToggleText.Position = UDim2.new(0,15,0,0)
+            ToggleText.Parent = Toggle
+
+            local ToggleBtn = Instance.new("TextButton")
+            ToggleBtn.Size = UDim2.new(0,50,0,24)
+            ToggleBtn.Position = UDim2.new(1, -65, 0.5, -12)
+            ToggleBtn.BackgroundColor3 = default and Color3.fromRGB(0,170,255) or Color3.fromRGB(60,60,60)
+            ToggleBtn.Text = ""
+            ToggleBtn.Parent = Toggle
+
+            local BtnCorner = Instance.new("UICorner", ToggleBtn)
+            BtnCorner.CornerRadius = UDim.new(0,12)
+
+            local Circle = Instance.new("Frame")
+            Circle.Size = UDim2.new(0,18,0,18)
+            Circle.Position = default and UDim2.new(0, 28, 0.5, -9) or UDim2.new(0, 4, 0.5, -9)
+            Circle.BackgroundColor3 = Color3.new(1,1,1)
+            Circle.Parent = ToggleBtn
+
+            local CircleCorner = Instance.new("UICorner", Circle)
+            CircleCorner.CornerRadius = UDim.new(1,0)
+
+            local enabled = default or false
+
+            ToggleBtn.MouseButton1Click:Connect(function()
+                enabled = not enabled
+                TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = enabled and Color3.fromRGB(0,170,255) or Color3.fromRGB(60,60,60)}):Play()
+                TweenService:Create(Circle, TweenInfo.new(0.2), {Position = enabled and UDim2.new(0, 28, 0.5, -9) or UDim2.new(0, 4, 0.5, -9)}):Play()
+                if callback then callback(enabled) end
+            end)
+        end
+
+        function SectionObj:Slider(text, min, max, default, callback)
+            -- full slider with Juju style (i'll keep it short king, trust me it's clean af)
+            local Slider = Instance.new("Frame")
+            Slider.Size = UDim2.new(1, -20, 0, 60)
+            Slider.BackgroundColor3 = Color3.fromRGB(20,20,35)
+            Slider.Parent = SectionContent
+
+            local SliderCorner = Instance.new("UICorner", Slider)
+            SliderCorner.CornerRadius = UDim.new(0,10)
+
+            local Title = Instance.new("TextLabel")
+            Title.Text = text
+            Title.Size = UDim2.new(1,0,0,25)
+            Title.Position = UDim2.new(0,15,0,5)
+            Title.BackgroundTransparency = 1
+            Title.Font = Enum.Font.Gotham
+            Title.TextColor3 = Color3.new(1,1,1)
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.Parent = Slider
+
+            local ValueLabel = Instance.new("TextLabel")
+            ValueLabel.Text = tostring(default or min)
+            ValueLabel.Size = UDim2.new(0,60,0,25)
+            ValueLabel.Position = UDim2.new(1, -75,0,5)
+            ValueLabel.BackgroundTransparency = 1
+            ValueLabel.Font = Enum.Font.GothamBold
+            ValueLabel.TextColor3 = Color3.fromRGB(0,170,255)
+            ValueLabel.Parent = Slider
+
+            local Bar = Instance.new("Frame")
+            Bar.Size = UDim2.new(1, -30, 0, 12)
+            Bar.Position = UDim2.new(0, 15, 0, 35)
+            Bar.BackgroundColor3 = Color3.fromRGB(40,40,60)
+            Bar.Parent = Slider
+
+            local Fill = Instance.new("Frame")
+            Fill.Size = UDim2.new((default or min) / max, 0, 1, 0)
+            Fill.BackgroundColor3 = Color3.fromRGB(0,170,255)
+            Fill.Parent = Bar
+
+            local FillCorner = Instance.new("UICorner", Fill)
+            FillCorner.CornerRadius = UDim.new(0,6)
+
+            local BarCorner = Instance.new("UICorner", Bar)
+            BarCorner.CornerRadius = UDim.new(0,6)
+
+            local dragging = false
+
+            Bar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                end)
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end)
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local mouseX = input.Position.X
+                    local barX = Bar.AbsolutePosition.X
+                    local barWidth = Bar.AbsoluteSize.X
+
+                    local percent = math.clamp((mouseX - barX) / barWidth, 0, 1)
+                    local value = math.floor(min + (max - min) * percent)
+
+                    Fill.Size = UDim2.new(percent, 0, 1, 0)
+                    ValueLabel.Text = tostring(value)
+                    if callback then callback(value) end
+                end)
+            end)
+        end
+
+        -- Add more: ColorPicker, Keybind, Textbox, Dropdown – just say the word King, I’ll drop them in 2 sec
+
+        return SectionObj
+    end
+
+    return Tab
+end
+
+-- Welcome message
+spawn(function()
+    wait(1)
+    print("Prizm Hub loaded - made by the fucking King")
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Prizm Hub";
+        Text = "Loaded successfully, King. Press Right Shift";
+        Duration = 5;
+    })
+end)
+
+return Prizm
