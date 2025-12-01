@@ -1,6 +1,4 @@
--- Prizm Hub by King Prizm
--- Loadstring version - full UI library
-
+-- Prizm Hub FIXED V1.1 - Syntax Cleaned for the King
 local Prizm = {Tabs = {}}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -11,6 +9,7 @@ local player = Players.LocalPlayer
 -- Main ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "PrizmHub"
+ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
 
 -- Blur Background
@@ -30,7 +29,7 @@ BlurEffect.Parent = game.Lighting
 local Wave = Instance.new("ImageLabel")
 Wave.Size = UDim2.new(1,0,1,0)
 Wave.Position = UDim2.new(0,0,0,0)
-Wave.Image = "rbxassetid://6026568210" -- blue wave pattern
+Wave.Image = "rbxassetid://6026568210"
 Wave.ImageColor3 = Color3.fromRGB(20, 30, 80)
 Wave.BackgroundTransparency = 1
 Wave.ZIndex = 0
@@ -56,7 +55,7 @@ for i = 1, 80 do
 
     local tween = TweenService:Create(p, TweenInfo.new(math.random(8,20), Enum.EasingStyle.Linear), {Position = UDim2.new(p.Position.X.Scale, 0, 1.2, 0)})
     tween:Play()
-    tween.Completed:Connect(function() do tween:Play() end)
+    tween.Completed:Connect(function() tween:Play() end)
 end
 
 -- Main UI
@@ -76,7 +75,7 @@ Outline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 Outline.Parent = Main
 
 local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12) -- ~0.6 feel
+Corner.CornerRadius = UDim.new(0, 12)
 Corner.Parent = Main
 
 local Background = Instance.new("Frame")
@@ -108,8 +107,16 @@ Title.Size = UDim2.new(0,200,1,0)
 Title.ZIndex = 11
 Title.Parent = TopBar
 
--- Dragging
-local dragging, dragInput, dragStart, startPos
+-- Dragging FIXED
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
@@ -117,18 +124,17 @@ TopBar.InputBegan:Connect(function(input)
         startPos = Main.Position
 
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputType.End then
+            if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
-            end)
+            end
         end)
-    end)
+    end
 end)
 
 TopBar.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-        local delta = input.Position - dragStart
-        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end)
+        updateInput(input)
+    end
 end)
 
 -- Tab System
@@ -152,16 +158,29 @@ Content.BackgroundTransparency = 1
 Content.Parent = Main
 
 -- Toggle Open/Close with Right Shift
-UserInputService.InputBegan:Connect(function(key)
+UserInputService.InputBegan:Connect(function(key, gpe)
+    if gpe then return end
     if key.KeyCode == Enum.KeyCode.RightShift then
         Main.Visible = not Main.Visible
         Blur.Visible = Main.Visible
         Wave.Visible = Main.Visible
         Particles.Visible = Main.Visible
-    end)
+        BlurEffect.Enabled = Main.Visible
+    end
 end)
 
+-- Window Function (for example usage)
+local function createWindow(title)
+    Title.Text = title or "Prizm Hub"
+    Main.Visible = true
+    Blur.Visible = true
+    Wave.Visible = true
+    Particles.Visible = true
+    BlurEffect.Enabled = true
+end
+
 -- Library Functions
+local firstTab = true
 function Prizm:Tab(name)
     local TabBtn = Instance.new("TextButton")
     TabBtn.Size = UDim2.new(1,-20,0,40)
@@ -202,16 +221,17 @@ function Prizm:Tab(name)
         TabContent.Visible = true
 
         for _, btn in pairs(TabContainer:GetChildren()) do
-            if btn:IsA("TextButton then
+            if btn:IsA("TextButton") then
                 TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20,20,30)}):Play()
             end
         end
         TweenService:Create(TabBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,100,200)}):Play()
     end)
 
-    if #TabContainer:GetChildren() == 3 then -- first tab
+    if firstTab then
         TabContent.Visible = true
         TabBtn.BackgroundColor3 = Color3.fromRGB(0,100,200)
+        firstTab = false
     end
 
     local Tab = {}
@@ -261,7 +281,7 @@ function Prizm:Tab(name)
             local BtnCorner = Instance.new("UICorner", Btn)
             BtnCorner.CornerRadius = UDim.new(0,10)
 
-            Btn.MouseButton1Click:Connect(callback)
+            Btn.MouseButton1Click:Connect(callback or function() end)
 
             Btn.MouseEnter:Connect(function()
                 TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,120,255)}):Play()
@@ -320,7 +340,6 @@ function Prizm:Tab(name)
         end
 
         function SectionObj:Slider(text, min, max, default, callback)
-            -- full slider with Juju style (i'll keep it short king, trust me it's clean af)
             local Slider = Instance.new("Frame")
             Slider.Size = UDim2.new(1, -20, 0, 60)
             Slider.BackgroundColor3 = Color3.fromRGB(20,20,35)
@@ -370,13 +389,13 @@ function Prizm:Tab(name)
             Bar.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = true
-                end)
+                end
             end)
 
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = false
-                end)
+                end
             end)
 
             UserInputService.InputChanged:Connect(function(input)
@@ -391,11 +410,22 @@ function Prizm:Tab(name)
                     Fill.Size = UDim2.new(percent, 0, 1, 0)
                     ValueLabel.Text = tostring(value)
                     if callback then callback(value) end
-                end)
+                end
             end)
         end
 
-        -- Add more: ColorPicker, Keybind, Textbox, Dropdown – just say the word King, I’ll drop them in 2 sec
+        -- Placeholder for more elements
+        function SectionObj:Textbox(text, placeholder, callback)
+            print("Textbox placeholder - add code later King")
+        end
+
+        function SectionObj:Keybind(text, default, callback)
+            print("Keybind placeholder")
+        end
+
+        function SectionObj:Colorpicker(text, default, callback)
+            print("Colorpicker placeholder")
+        end
 
         return SectionObj
     end
@@ -403,13 +433,15 @@ function Prizm:Tab(name)
     return Tab
 end
 
--- Welcome message
+Prizm.createWindow = createWindow
+
+-- Welcome
 spawn(function()
     wait(1)
-    print("Prizm Hub loaded - made by the fucking King")
+    print("Prizm Hub loaded clean - press Right Shift King")
     game.StarterGui:SetCore("SendNotification", {
         Title = "Prizm Hub";
-        Text = "Loaded successfully, King. Press Right Shift";
+        Text = "Fixed & Loaded! Press Right Shift";
         Duration = 5;
     })
 end)
